@@ -1,5 +1,48 @@
 // exportStudents.js
-import { db, collection, getDocs } from "./firebase-config.js";
+import {
+  db,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  onAuthStateChanged,
+  auth,
+} from "./firebase-config.js";
+
+const content = document.getElementById("content");
+content.style.display = "none"; // Hide until admin check passes
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        if (userData.role === "admin") {
+          // ✅ Allow access
+          content.style.display = "block";
+        } else {
+          // ❌ Not an admin
+          alert("Access denied. Admins only.");
+          window.location.href = "index.html";
+        }
+      } else {
+        alert("User record not found.");
+        window.location.href = "index.html";
+      }
+    } catch (error) {
+      console.error("Admin check failed:", error);
+      alert("Error checking user role.");
+      window.location.href = "index.html";
+    }
+  } else {
+    // ❌ Not logged in
+    alert("Please log in first.");
+    window.location.href = "index.html";
+  }
+});
 
 export async function exportStudentsToExcel() {
   try {
